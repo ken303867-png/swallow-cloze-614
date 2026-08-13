@@ -1,0 +1,12 @@
+{
+  "id": "./swallow-cloze-614-independent-pwa",
+  "name": "摂食嚥下 正文化穴抜き614",
+  "short_name": "穴抜き614",
+  "description": "摂食嚥下障害看護 認定審査試験対策。正文化した選択肢を1題ずつ穴抜きで学習する独立PWA。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f6f9",
+  "theme_color": "#173b5e",
+  "lang": "ja"
+}
