@@ -32,53 +32,8 @@ jobs:
           s=re.sub(r"(const\s+(?:CACHE|CACHE_NAME)\s*=\s*)['\"][^'\"]+['\"]", r"\1'swallow-cloze-614-v1'", s, count=1)
           p.write_text(s, encoding='utf-8')
           PY
-          mkdir -p .github/workflows
-          cat > .github/workflows/pages.yml <<'YAML'
-          name: Deploy PWA to GitHub Pages
-          on:
-            push:
-              branches: [main]
-            workflow_dispatch:
-          permissions:
-            contents: read
-            pages: write
-            id-token: write
-          concurrency:
-            group: pages
-            cancel-in-progress: false
-          jobs:
-            deploy:
-              environment:
-                name: github-pages
-                url: ${{ steps.deployment.outputs.page_url }}
-              runs-on: ubuntu-latest
-              steps:
-                - name: Checkout
-                  uses: actions/checkout@v6
-                - name: Configure Pages
-                  uses: actions/configure-pages@v5
-                  with:
-                    enablement: true
-                - name: Upload site
-                  uses: actions/upload-pages-artifact@v4
-                  with:
-                    path: .
-                - name: Deploy
-                  id: deployment
-                  uses: actions/deploy-pages@v4
-          YAML
-          cat > .github/workflows/migrate.yml <<'YAML'
-          name: Migration completed
-          on:
-            workflow_dispatch:
-          jobs:
-            status:
-              runs-on: ubuntu-latest
-              steps:
-                - run: echo "swallow-cloze-614 migration already completed"
-          YAML
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html manifest.json sw.js results-patch.js README.md app.part* .github/workflows
+          git add index.html manifest.json sw.js results-patch.js README.md app.part*
           git commit -m "Migrate swallow-cloze-614 PWA from legacy repository"
           git push origin HEAD:main
