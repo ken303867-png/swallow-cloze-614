@@ -1,6 +1,6 @@
-const CACHE_PREFIX = 'swallow-cloze-614-independent-';
-const CACHE = CACHE_PREFIX + 'v7-20260813-results';
-const ASSETS = ['./', './index.html', './manifest.json', './results-patch.js?v=1'];
+const CACHE_PREFIX = 'swallow-cloze-614-new-';
+const CACHE = CACHE_PREFIX + 'v8-transfer';
+const ASSETS = ['./', './index.html', './manifest.json', './results-patch.js?v=1', './data-transfer.js'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
@@ -29,5 +29,5 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  e.respondWith(caches.match(e.request).then(cached => cached || fetch(e.request)));
+  e.respondWith(caches.match(e.request, {ignoreSearch:true}).then(cached => cached || fetch(e.request)));
 });
