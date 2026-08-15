@@ -1,6 +1,10 @@
 const CACHE_PREFIX = 'swallow-cloze-614-new-';
-const CACHE = CACHE_PREFIX + 'v9-backup';
-const ASSETS = ['./', './index.html', './manifest.json', './results-patch.js?v=1', './data-transfer.js'];
+const CACHE = CACHE_PREFIX + 'v10-cloze549';
+const ASSETS = [
+  './','./index.html','./manifest.json','./data-transfer.js?v=2',
+  './app.part01','./app.part02','./app.part03','./app.part04','./app.part05',
+  './app.part06','./app.part07','./app.part08','./app.part09','./app.part10'
+];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
@@ -25,9 +29,17 @@ self.addEventListener('fetch', e => {
           }
           return r;
         })
-        .catch(() => caches.match('./index.html'))
+        .catch(() => caches.open(CACHE).then(c => c.match('./index.html')))
     );
     return;
   }
-  e.respondWith(caches.match(e.request, {ignoreSearch:true}).then(cached => cached || fetch(e.request)));
+  e.respondWith(
+    caches.open(CACHE).then(c => c.match(e.request, {ignoreSearch:true}).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(r => {
+        if (r && r.status === 200) c.put(e.request, r.clone());
+        return r;
+      });
+    }))
+  );
 });
