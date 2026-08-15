@@ -12,8 +12,9 @@
 <script>
 (async()=>{try{
   if(!('DecompressionStream' in window)) throw new Error('このブラウザは圧縮アプリの展開に対応していません。Safari / Chrome を最新版に更新してください。');
-  const r=await fetch('./app.data',{cache:'no-store'});if(!r.ok)throw new Error('問題データを取得できませんでした。HTTP '+r.status);
-  const b64=(await r.text()).trim(); const bin=atob(b64); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  const names=['app.part01','app.part02','app.part03','app.part04','app.part05','app.part06','app.part07','app.part08','app.part09','app.part10'];
+  const texts=await Promise.all(names.map(async n=>{const r=await fetch('./'+n,{cache:'no-store'});if(!r.ok)throw new Error(n+' を取得できませんでした。HTTP '+r.status);return r.text();}));
+  const b64=texts.join('').trim(); const bin=atob(b64); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
   const ds=new DecompressionStream('gzip'); let text=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).text();
   text=text.replace('</body>','<script src="./data-transfer.js?v=2"><\/script></body>');
   document.open();document.write(text);document.close();
