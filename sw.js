@@ -1,6 +1,6 @@
 const CACHE_PREFIX = 'swallow-cloze-614-new-';
-const CACHE = CACHE_PREFIX + 'v12-memory-answer-toggle';
-const ASSETS = ['./','./index.html','./manifest.json','./data-transfer.js','./memory-mode.js','./memory-answer-toggle.js','./app.part01','./app.part02','./app.part03','./app.part04','./app.part05','./app.part06','./app.part07','./app.part08','./app.part09','./app.part10'];
+const CACHE = CACHE_PREFIX + 'v13-cloze-results';
+const ASSETS = ['./','./index.html','./manifest.json','./data-transfer.js','./results-patch.js','./cloze-results-compat.js','./memory-mode.js','./memory-answer-toggle.js','./app.part01','./app.part02','./app.part03','./app.part04','./app.part05','./app.part06','./app.part07','./app.part08','./app.part09','./app.part10'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
