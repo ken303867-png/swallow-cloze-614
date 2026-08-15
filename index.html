@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#173b5e">
-<title>摂食嚥下 正文化穴抜き614</title>
+<title>摂食嚥下 正文化穴抜き549</title>
 <link rel="manifest" href="manifest.json">
 <style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;background:#f3f6f9;color:#173b5e;display:grid;place-items:center;min-height:100vh}.box{text-align:center;padding:28px}.spin{width:42px;height:42px;border:4px solid #dbe3ea;border-top-color:#173b5e;border-radius:50%;margin:0 auto 16px;animation:s 1s linear infinite}@keyframes s{to{transform:rotate(360deg)}}.err{color:#a63d3d;max-width:560px;line-height:1.7}</style>
 </head>
@@ -12,11 +12,10 @@
 <script>
 (async()=>{try{
   if(!('DecompressionStream' in window)) throw new Error('このブラウザは圧縮アプリの展開に対応していません。Safari / Chrome を最新版に更新してください。');
-  const names=['app.part01','app.part02','app.part03','app.part04','app.part05','app.part06','app.part07','app.part08','app.part09','app.part10'];
-  const texts=await Promise.all(names.map(async n=>{const r=await fetch('./'+n,{cache:'no-store'});if(!r.ok)throw new Error(n+' を取得できませんでした。HTTP '+r.status);return r.text();}));
-  const b64=texts.join('').trim(); const bin=atob(b64); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  const r=await fetch('./app.data',{cache:'no-store'});if(!r.ok)throw new Error('問題データを取得できませんでした。HTTP '+r.status);
+  const b64=(await r.text()).trim(); const bin=atob(b64); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
   const ds=new DecompressionStream('gzip'); let text=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).text();
-  text=text.replace('</body>','<script src="./data-transfer.js?v=1"><\/script></body>');
+  text=text.replace('</body>','<script src="./data-transfer.js?v=2"><\/script></body>');
   document.open();document.write(text);document.close();
 }catch(e){document.querySelector('.spin')?.remove();document.querySelector('strong').textContent='読み込みに失敗しました';document.getElementById('msg').className='err';document.getElementById('msg').textContent=e.message;}
 })();
