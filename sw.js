@@ -1,6 +1,6 @@
 const CACHE_PREFIX = 'swallow-cloze-614-new-';
-const CACHE = CACHE_PREFIX + 'v9-backup';
-const ASSETS = ['./', './index.html', './manifest.json', './results-patch.js?v=1', './data-transfer.js'];
+const CACHE = CACHE_PREFIX + 'v10-data549';
+const ASSETS = ["./", "./index.html", "./manifest.json", "./data-transfer.js", "./app.data"];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
