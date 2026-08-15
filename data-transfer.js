@@ -2,7 +2,7 @@
 'use strict';
 const FORMAT='swallow-backup-v2';
 const APP_ID='swallow-cloze-614';
-const APP_LABEL='正文化穴抜き614版';
+const APP_LABEL='正文化穴抜き549版';
 const KEY='swallow_cloze_614_independent_pwa_v1';
 const RESTORE='__backup_restore__'+APP_ID;
 const stamp=()=>new Date().toISOString().replace(/[:.]/g,'-');
@@ -34,7 +34,7 @@ async function importData(file){
   }
   if(typeof raw!=='string')throw new Error('このアプリ用のバックアップではありません。');
   const before=current();sessionStorage.setItem(RESTORE,before===null?'__NONE__':before);
-  if(!confirm('バックアップを読み込みます。現在の正文化穴抜き614版の学習履歴は上書きされます。'))return;
+  if(!confirm('バックアップを読み込みます。現在の正文化穴抜き549版の学習履歴は上書きされます。'))return;
   localStorage.setItem(KEY,raw);alert('バックアップを読み込みました。アプリを再読み込みします。');location.reload();
  }catch(e){alert('読み込みに失敗しました: '+(e.message||e));}
 }

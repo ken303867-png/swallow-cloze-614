@@ -1,13 +1,21 @@
-# 摂食嚥下 正文化穴抜き614 — 新規独立PWA版
+# 摂食嚥下 正文化穴抜き549 — 独立PWA版
 
-このフォルダは、既存のPWAを上書きせずに新規アプリとして公開するための独立版です。
+`swallow-cloze-614` の公開URL・PWA ID・学習履歴キーを維持したまま、問題データを「重複整理・出題頻度最適化版」へ更新した版です。
 
-## 独立させている項目
+## 収録内容
+
+- 過去問由来コア: 519カード
+- B課程カリキュラム補完: 30カード
+- 合計: 549カード
+- 穴抜き語句: 771語句
+- 重複統合: 65群、旧71カード分を統合
+
+## 互換性
 
 - 公開フォルダ名: `swallow-cloze-614/`
 - PWA manifest ID: `./swallow-cloze-614-independent-pwa`
 - PWA scope: `./`
-- Service Worker cache prefix: `swallow-cloze-614-independent-`
 - 学習履歴 localStorage key: `swallow_cloze_614_independent_pwa_v1`
+- 重複統合された旧カードの学習履歴は、統合先カードへ自動移行します。
 
-Service Workerは、このアプリ自身の旧キャッシュだけを削除します。他アプリのキャッシュは削除しません。
+Service Workerはこのアプリ専用キャッシュだけを更新します。
