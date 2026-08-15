@@ -16,7 +16,7 @@
   const texts=await Promise.all(names.map(async n=>{const r=await fetch('./'+n,{cache:'no-store'});if(!r.ok)throw new Error(n+' を取得できませんでした。HTTP '+r.status);return r.text();}));
   const b64=texts.join('').trim(); const bin=atob(b64); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
   const ds=new DecompressionStream('gzip'); let text=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).text();
-  text=text.replace('</body>','<script src="./data-transfer.js?v=2"><\/script><script src="./memory-mode.js?v=1"><\/script></body>');
+  text=text.replace('</body>','<script src="./data-transfer.js?v=2"><\/script><script src="./memory-mode.js?v=1"><\/script><script src="./memory-answer-toggle.js?v=1"><\/script></body>');
   document.open();document.write(text);document.close();
 }catch(e){document.querySelector('.spin')?.remove();document.querySelector('strong').textContent='読み込みに失敗しました';document.getElementById('msg').className='err';document.getElementById('msg').textContent=e.message;}
 })();
