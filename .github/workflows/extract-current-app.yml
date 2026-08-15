@@ -1,0 +1,28 @@
+name: Extract current cloze app
+
+on:
+  push:
+    branches: [analysis/extract-current-614]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Reconstruct compressed app
+        run: |
+          cat app.part01 app.part02 app.part03 app.part04 app.part05 app.part06 app.part07 app.part08 app.part09 app.part10 \
+            | tr -d '\r\n ' | base64 -d | gunzip > current-app.html
+          test -s current-app.html
+          grep -q '摂食嚥下' current-app.html
+          wc -c current-app.html
+      - name: Upload reconstructed app
+        uses: actions/upload-artifact@v4
+        with:
+          name: current-cloze-app
+          path: current-app.html
+          retention-days: 1
