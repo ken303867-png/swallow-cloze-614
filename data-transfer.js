@@ -35,7 +35,7 @@ async function importData(file){
   if(typeof raw!=='string')throw new Error('このアプリ用のバックアップではありません。');
   const before=current();sessionStorage.setItem(RESTORE,before===null?'__NONE__':before);
   if(!confirm('バックアップを読み込みます。現在の正文化穴抜き549版の学習履歴は上書きされます。'))return;
-  localStorage.setItem(KEY,raw);alert('バックアップを読み込みました。アプリを再読み込みします。');location.reload();
+  localStorage.setItem(KEY,raw);alert('バックアップを読み込みました。旧614版データの場合は、対応可能な履歴を549版へ自動移行して再読み込みします。');location.reload();
  }catch(e){alert('読み込みに失敗しました: '+(e.message||e));}
 }
 function restore(){
