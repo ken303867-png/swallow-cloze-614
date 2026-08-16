@@ -1,0 +1,108 @@
+name: Validate refactor
+on:
+  push:
+    branches: [refactor-app-20260816]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refactor-app-20260816
+      - name: Static validation
+        run: |
+          node --check data.js
+          node --check migration-map.js
+          node --check core.js
+          node --check data-transfer.js
+          node --check results.js
+          node --check memory.js
+          node --check sw.refactor.js
+          python - <<'PY'
+          import json,re,pathlib
+          root=pathlib.Path('.')
+          d=(root/'data.js').read_text(encoding='utf-8')
+          obj=json.loads(re.fullmatch(r'const DATA=(.*);\s*',d,re.S).group(1))
+          assert obj['meta']['actual_cards']==549
+          assert len(obj['cards'])==549
+          assert len({c['id'] for c in obj['cards']})==549
+          assert sum(len(c['answers']) for c in obj['cards'])==771
+          core=(root/'core.js').read_text(encoding='utf-8')
+          assert "const STORE_KEY='swallow_cloze_614_independent_pwa_v1'" in core
+          assert 'const DATA=' not in core
+          assert 'const OLD_TO_NEW=' not in core
+          idx=(root/'index.refactor.html').read_text(encoding='utf-8')
+          expected=['styles.css?v=1','data.js?v=1','migration-map.js?v=1','core.js?v=1','data-transfer.js?v=2','results.js?v=1','memory.js?v=1']
+          pos=[idx.index(x) for x in expected]
+          assert pos==sorted(pos)
+          assert 'app.part01' not in idx and 'DecompressionStream' not in idx
+          mem=(root/'memory.js').read_text(encoding='utf-8')
+          assert "?'答えを隠す':'答えを表示'" in mem
+          assert 'answerShown=!memorySession.answerShown' in mem
+          res=(root/'results.js').read_text(encoding='utf-8')
+          assert 'function finishSession()' in res and '結果を見る →' in res
+          assert "const PATCH_VERSION='cloze-results-compat-v1'" in res
+          sw=(root/'sw.refactor.js').read_text(encoding='utf-8')
+          assert 'v14-refactor' in sw and 'app.part01' not in sw
+          print('static refactor QA: OK')
+          PY
+      - name: Install DOM test dependency
+        run: npm install --no-save jsdom@26
+      - name: Behavioral smoke test
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const {JSDOM}=require('jsdom');
+          let html=fs.readFileSync('index.refactor.html','utf8').replace(/<script[^>]*src="[^"]+"[^>]*><\/script>/g,'');
+          const dom=new JSDOM(html,{url:'https://example.com/swallow-cloze-614/',runScripts:'outside-only',pretendToBeVisual:true});
+          const w=dom.window;
+          w.scrollTo=()=>{};
+          w.alert=()=>{};
+          w.confirm=()=>true;
+          Object.defineProperty(w.navigator,'serviceWorker',{configurable:true,value:{register:()=>Promise.resolve()}});
+          const files=['data.js','migration-map.js','core.js','data-transfer.js','results.js','memory.js'];
+          const code=files.map(f=>fs.readFileSync(f,'utf8')).join('\n')+`\n
+          (()=>{
+            const assert=(x,m)=>{if(!x)throw new Error(m)};
+            assert(DATA.cards.length===549,'549 cards');
+            assert(STORE_KEY==='swallow_cloze_614_independent_pwa_v1','store key');
+            assert(document.getElementById('modeSel'),'mode selector');
+
+            document.getElementById('limitSel').value='10';
+            // Add a 1-card option only for deterministic smoke testing.
+            const one=document.createElement('option'); one.value='1'; one.textContent='1問'; document.getElementById('limitSel').appendChild(one); document.getElementById('limitSel').value='1';
+            document.getElementById('modeSel').value='cloze';
+            document.getElementById('startBtn').click();
+            assert(!document.getElementById('studyView').classList.contains('hidden'),'cloze study opened');
+            document.getElementById('showAnswerBtn').click();
+            document.querySelector('.rating .btn[data-rate="good"]').click();
+            document.getElementById('nextBtn').click();
+            assert(!document.getElementById('resultView').classList.contains('hidden'),'result view shown');
+            assert(document.getElementById('rTotal').textContent==='1','result total');
+            assert(document.getElementById('rGood').textContent==='1','result good');
+
+            document.getElementById('resultHomeBtn').click();
+            document.getElementById('modeSel').value='memory';
+            document.getElementById('limitSel').value='1';
+            document.getElementById('startBtn').click();
+            const box=document.getElementById('answerBox');
+            const btn=document.getElementById('showAnswerBtn');
+            assert(!box.classList.contains('show'),'memory starts hidden');
+            btn.click();
+            assert(box.classList.contains('show'),'memory answer shown');
+            assert(btn.textContent==='答えを隠す','hide label');
+            btn.click();
+            assert(!box.classList.contains('show'),'memory answer hidden again');
+            assert(btn.textContent==='答えを表示','show label restored');
+            btn.click();
+            document.querySelector('.rating .btn[data-rate="good"]').click();
+            assert(document.getElementById('qCat').textContent.includes('暗記モード 完了'),'memory completion');
+            assert(localStorage.getItem(STORE_KEY),'state persisted');
+            window.__REFRACTOR_QA__='OK';
+          })();`;
+          w.eval(code);
+          if(w.__REFRACTOR_QA__!=='OK')throw new Error('behavior QA incomplete');
+          console.log('behavior refactor QA: OK');
+          NODE
