@@ -1,0 +1,23 @@
+name: Extract legacy app
+on:
+  push:
+    branches: [refactor-app-20260816]
+permissions:
+  contents: write
+jobs:
+  extract:
+    if: github.event.head_commit.message != 'Commit extracted legacy app'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refactor-app-20260816
+      - name: Extract
+        run: python scripts/extract_legacy_app.py
+      - name: Commit extracted app
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add legacy-app.html
+          git diff --cached --quiet || git commit -m "Commit extracted legacy app"
+          git push
