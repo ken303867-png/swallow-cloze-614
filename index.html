@@ -58,8 +58,8 @@
 </section>
 
 <section id="dataView" class="hidden">
- <div class="panel"><h2>収録データ</h2><p id="metaText"></p><div class="notice">「摂食嚥下認定_厳選コンパクト版.docx」を正本として、本文の全角括弧（ ）内を穴抜き語句として資料順に収録しています。S・A・B優先QAを反映し、見出し誤カード、完全重複、近似重複を整理しました。残存カードのIDは変更していません。</div><table class="data-table"><thead><tr><th>分野</th><th>カード数</th></tr></thead><tbody id="catTable"></tbody></table></div>
- <div class="panel"><h2>データ更新</h2><p class="muted">旧549カードとは問題データを全面的に入れ替えています。旧版の学習履歴・暗記履歴は新問題へ誤って紐付けず、端末内のアーカイブとして保持します。重複カードを統合した場合は、削除側の学習履歴を残す側のIDへ合算します。</p><div class="footer-note">S優先11件、A優先51カード、B優先の文脈・弱い穴・穴数過多・長文穴・近似重複まで修正済みです。次工程はC表記統一と全体再QAです。</div></div>
+ <div class="panel"><h2>収録データ</h2><p id="metaText"></p><div class="notice">「摂食嚥下認定_厳選コンパクト版.docx」を正本として、本文の全角括弧（ ）内を穴抜き語句として資料順に収録しています。1,390カード全体QAのS・A・B・C優先修正を反映し、見出し誤カード、完全重複、近似重複、文脈不足、穴抜き設計、表記揺れを整理しました。残存カードのIDは変更していません。</div><table class="data-table"><thead><tr><th>分野</th><th>カード数</th></tr></thead><tbody id="catTable"></tbody></table></div>
+ <div class="panel"><h2>データ更新</h2><p class="muted">旧549カードとは問題データを全面的に入れ替えています。旧版の学習履歴・暗記履歴は新問題へ誤って紐付けず、端末内のアーカイブとして保持します。重複カードを統合した場合は、削除側の学習履歴を残す側のIDへ合算します。</p><div class="footer-note">QA反映後は1,365カードです。最終全カードQAでは、カード数・穴数・ID・括弧・重複・文脈・表記・学習履歴移行を一括監査します。</div></div>
  <div class="panel"><h2>バックアップ</h2><p class="muted">学習履歴はこの端末のブラウザ内に保存されます。JSONで書き出して別端末へ移せます。</p><div class="actions"><button class="btn secondary" id="exportBtn">学習履歴を書き出す</button><label class="btn ghost" for="importFile">学習履歴を読み込む</label><input id="importFile" type="file" accept="application/json" class="hidden"></div></div>
 </section>
 </main>
@@ -73,6 +73,7 @@
 <script src="./qa-b-context-patch.js?v=1"></script>
 <script src="./qa-b-design-patch.js?v=1"></script>
 <script src="./qa-b-overlap-patch.js?v=1"></script>
+<script src="./qa-c-style-patch.js?v=1"></script>
 <script src="./core.js?v=2"></script>
 <script src="./qa-progress-migration.js?v=1"></script>
 <script src="./data-transfer.js?v=3"></script>
