@@ -3,6 +3,8 @@ name: QA 1390 dataset S-priority fixes
 on:
   push:
     branches: ["qa-fix-1390-s-priority"]
+  pull_request:
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
