@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#173b5e">
-<title>摂食嚥下 正文化穴抜き549</title>
+<title>摂食嚥下 正文化穴抜き1390</title>
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="./styles.css?v=1">
 </head>
 <body>
-<header class="appbar"><div class="inner"><div class="brand">摂食嚥下 正文化穴抜きトレーナー<small>認定看護師試験対策・資料準拠</small></div><div class="topstat" id="topstat"></div></div></header>
+<header class="appbar"><div class="inner"><div class="brand">摂食嚥下 正文化穴抜きトレーナー<small>認定看護師試験対策・厳選コンパクト版</small></div><div class="topstat" id="topstat"></div></div></header>
 <main>
 <section id="homeView">
   <div class="panel">
@@ -17,7 +17,7 @@
     <div class="notice" id="dataNotice"></div>
     <div class="grid">
       <div class="field"><label>分野</label><select id="categorySel"></select></div>
-      <div class="field"><label>試験・出典</label><select id="sourceSel"><option value="all">すべて</option><option value="2018模試">2018模試</option><option value="A29">A29</option><option value="A30">A30</option><option value="B2025">B2025</option><option value="カリキュラム補完">カリキュラム補完</option></select></div>
+      <div class="field"><label>資料</label><select id="sourceSel"><option value="all">すべて</option><option value="厳選コンパクト版">厳選コンパクト版</option></select></div>
       <div class="field"><label>学習状態</label><select id="statusSel"><option value="all">すべて</option><option value="unseen">未学習のみ</option><option value="review">要復習のみ</option><option value="uncertain">自信なしのみ</option><option value="bookmarked">ブックマークのみ</option><option value="good">できたのみ</option></select></div>
       <div class="field"><label>出題順</label><select id="orderSel"><option value="ordered">資料順</option><option value="random">ランダム</option></select></div>
       <div class="field"><label>出題数</label><select id="limitSel"><option value="0">該当する全問</option><option value="10">10問</option><option value="20" selected>20問</option><option value="50">50問</option><option value="100">100問</option></select></div>
@@ -58,11 +58,19 @@
 </section>
 
 <section id="dataView" class="hidden">
- <div class="panel"><h2>収録データ</h2><p id="metaText"></p><div class="notice">新しい「重複整理・出題頻度最適化版」DOCXを正本として収録しています。資料にない内容は推測補完していません。</div><table class="data-table"><thead><tr><th>分野</th><th>カード数</th></tr></thead><tbody id="catTable"></tbody></table></div>
- <div class="panel"><h2>重複整理</h2><p class="muted">過去問由来590カードを65の重複群で統合し、71カードを削減して519コアカードとしています。B課程カリキュラム補完30項目を維持し、合計549カードです。</p><div id="missingRefs" class="footer-note">「診療報酬・制度」は新資料本文に独立セクションがないため、本版では新規補完していません。</div></div>
- <div class="panel"><h2>バックアップ</h2><p class="muted">学習履歴はこの端末のブラウザ内に保存されます。JSONで書き出して別端末へ移せます。旧614版の対応可能な履歴は初回起動時に549版へ移行します。</p><div class="actions"><button class="btn secondary" id="exportBtn">学習履歴を書き出す</button><label class="btn ghost" for="importFile">学習履歴を読み込む</label><input id="importFile" type="file" accept="application/json" class="hidden"></div></div>
+ <div class="panel"><h2>収録データ</h2><p id="metaText"></p><div class="notice">「摂食嚥下認定_厳選コンパクト版.docx」を正本として、本文の全角括弧（ ）内を穴抜き語句として資料順に収録しています。穴抜き語句のない見出し・説明行はカード化していません。</div><table class="data-table"><thead><tr><th>分野</th><th>カード数</th></tr></thead><tbody id="catTable"></tbody></table></div>
+ <div class="panel"><h2>データ更新</h2><p class="muted">旧549カードとは問題データを全面的に入れ替えています。旧版の学習履歴・暗記履歴は新問題へ誤って紐付けず、端末内のアーカイブとして保持します。新1390カードは未学習から開始します。</p><div class="footer-note">原資料内にある括弧表記の不整合2箇所は、内容を推測修正せず原文を保持しています。</div></div>
+ <div class="panel"><h2>バックアップ</h2><p class="muted">学習履歴はこの端末のブラウザ内に保存されます。JSONで書き出して別端末へ移せます。</p><div class="actions"><button class="btn secondary" id="exportBtn">学習履歴を書き出す</button><label class="btn ghost" for="importFile">学習履歴を読み込む</label><input id="importFile" type="file" accept="application/json" class="hidden"></div></div>
 </section>
 </main>
 <nav class="tabs"><button class="tab active" data-view="home"><b>⌂</b>学習</button><button class="tab" data-view="stats"><b>▥</b>成績</button><button class="tab" data-view="data"><b>ⓘ</b>データ</button></nav>
-<script src="./data.js?v=1"></script><script src="./migration-map.js?v=1"></script><script src="./core.js?v=1"></script><script src="./data-transfer.js?v=2"></script><script src="./results.js?v=1"></script><script src="./memory.js?v=1"></script>
+<script src="./data-sections-01-05.js?v=1"></script>
+<script src="./data-sections-06-09.js?v=1"></script>
+<script src="./data-sections-10-13.js?v=1"></script>
+<script src="./data-sections-14-17.js?v=1"></script>
+<script src="./data.js?v=2"></script>
+<script src="./core.js?v=2"></script>
+<script src="./data-transfer.js?v=3"></script>
+<script src="./results.js?v=1"></script>
+<script src="./memory.js?v=1"></script>
 </body></html>

@@ -2,7 +2,7 @@
 'use strict';
 const FORMAT='swallow-backup-v2';
 const APP_ID='swallow-cloze-614';
-const APP_LABEL='正文化穴抜き549版';
+const APP_LABEL='正文化穴抜き1390版';
 const KEY='swallow_cloze_614_independent_pwa_v1';
 const RESTORE='__backup_restore__'+APP_ID;
 const stamp=()=>new Date().toISOString().replace(/[:.]/g,'-');
@@ -20,10 +20,10 @@ async function saveFile(text,name){
 }
 async function exportData(){
  const raw=current();
- if(!raw){alert('まだ保存されている学習履歴がありません。1問以上解答してからバックアップしてください。');return;}
+ if(!raw){alert('まだ保存されている学習履歴がありません。1問以上学習してからバックアップしてください。');return;}
  const data={format:FORMAT,appId:APP_ID,exportedAt:new Date().toISOString(),storageKey:KEY,value:raw};
  await saveFile(JSON.stringify(data,null,2),APP_ID+'-backup-'+stamp()+'.json');
- alert('バックアップを作成しました。回答履歴 '+countProgress(raw)+'問分を含みます。');
+ alert('バックアップを作成しました。現在の1390カード版の回答履歴 '+countProgress(raw)+'問分と、保持されている過去データのアーカイブを含みます。');
 }
 async function importData(file){
  try{
@@ -34,8 +34,8 @@ async function importData(file){
   }
   if(typeof raw!=='string')throw new Error('このアプリ用のバックアップではありません。');
   const before=current();sessionStorage.setItem(RESTORE,before===null?'__NONE__':before);
-  if(!confirm('バックアップを読み込みます。現在の正文化穴抜き549版の学習履歴は上書きされます。'))return;
-  localStorage.setItem(KEY,raw);alert('バックアップを読み込みました。旧614版データの場合は、対応可能な履歴を549版へ自動移行して再読み込みします。');location.reload();
+  if(!confirm('バックアップを読み込みます。現在の正文化穴抜き1390版の学習状態は読み込んだデータで置き換わります。旧問題データの履歴は新1390カードへ割り当てずアーカイブされます。'))return;
+  localStorage.setItem(KEY,raw);alert('バックアップを読み込みました。データ形式を確認して再読み込みします。');location.reload();
  }catch(e){alert('読み込みに失敗しました: '+(e.message||e));}
 }
 function restore(){
