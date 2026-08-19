@@ -1,4 +1,4 @@
-name: QA 1390 dataset S+A+B2 fixes
+name: QA 1390 dataset S+A+B2 overlap fixes
 
 on:
   push:
@@ -28,6 +28,7 @@ jobs:
           node --check qa-data-patch.js
           node --check qa-b-context-patch.js
           node --check qa-b-design-patch.js
+          node --check qa-b-overlap-patch.js
           node --check core.js
           node --check qa-progress-migration.js
           node --check data-transfer.js
@@ -44,7 +45,7 @@ jobs:
           for(const f of [
             'data-sections-01-05.js','data-sections-06-09.js',
             'data-sections-10-13.js','data-sections-14-17.js',
-            'data.js','qa-data-patch.js','qa-b-context-patch.js','qa-b-design-patch.js'
+            'data.js','qa-data-patch.js','qa-b-context-patch.js','qa-b-design-patch.js','qa-b-overlap-patch.js'
           ]) vm.runInContext(fs.readFileSync(f,'utf8'),ctx,{filename:f});
 
           const snapshot=vm.runInContext(`({
@@ -61,9 +62,9 @@ jobs:
 
           eq(cards.length,1365,'active card count');
           eq(meta.actual_cards,1365,'meta card count');
-          eq(meta.answer_terms,2297,'answer term count');
+          eq(meta.answer_terms,2293,'answer term count');
           eq(categories.reduce((n,c)=>n+c.actual,0),1365,'category card sum');
-          eq(categories.reduce((n,c)=>n+c.answer_terms,0),2297,'category answer sum');
+          eq(categories.reduce((n,c)=>n+c.answer_terms,0),2293,'category answer sum');
 
           const ids=cards.map(c=>c.id);
           eq(new Set(ids).size,ids.length,'unique IDs');
@@ -84,24 +85,24 @@ jobs:
             if(c.answers.length>4)fail(`excessive cloze count remains ${c.id}: ${c.answers.length}`);
           }
 
-          // Critical S fixes remain intact.
           const sExpected=new Map([
             [112,'構成失行の主な責任病巣（右頭頂葉）'],
             [242,'プロフィール5は、（むせることがしばしば）で、（全量飲むことが困難）である。'],
             [293,'K-point刺激の対象には、（嚥下反射惹起遅延）（重度嚥下障害）も含まれる。'],
             [401,'VEでは、検査食に（青色）や（緑色）などの食用着色料を添加し、（咽頭残留）や（喉頭侵入）などを評価する。'],
             [738,'レビー小体型認知症では、（認知機能の変動）（幻視）（パーキンソニズム）が特徴である。'],
-            [746,'レビー小体型認知症などで視空間認知障害がある場合は、（できる動作に合わせて食器の位置を調整）する。'],
+            [746,'レビー小体型認知症などで視空間認知障害がある場合は、できる動作に合わせて（食器の位置）を調整する。'],
             [1042,'ACE阻害薬カプトプリルでは、（サブスタンスP増加）などを介して（嚥下反射）（咳反射）の改善がみられることがある。']
           ]);
           for(const [id,text] of sExpected){const c=byId(id);if(!c)fail(`S fixed card missing ${id}`);eq(c.text,text,`S fixed text ${id}`);}
 
-          // A context fixes remain intact on cards that survive B2.
           for(const id of [245,246,247,248,249,250,251,252])if(!byId(id).text.startsWith('MWST'))fail(`MWST context missing ${id}`);
           for(const id of [254,255,256,257,258,259,260,261])if(!byId(id).text.startsWith('フードテスト'))fail(`Food Test context missing ${id}`);
           for(const id of [943,945,955,970,975])if(!byId(id).text.match(/ギラン・バレー症候群|炎症性筋疾患・皮膚筋炎|重症筋無力症/))fail(`disease context missing ${id}`);
+          eq(byId(259).answers.length,3,'Food Test score3 cloze count');
+          eq(byId(970).answers.length,3,'myasthenia symptom cloze count');
+          eq(byId(746).answers[0],'食器の位置','DLB long cloze shortened');
 
-          // B1 context and weak-cloze fixes.
           for(let id=139;id<=161;id++)if(id!==151&&!byId(id).text.startsWith('DSSの'))fail(`DSS context missing ${id}`);
           for(let id=175;id<=189;id++)if(id!==186&&!byId(id).text.includes('摂食・嚥下能力グレード'))fail(`ability grade context missing ${id}`);
           for(const id of [192,193,194,195,198,199,200,201,202,203,205,206])if(!byId(id).text.startsWith('摂食状況レベル'))fail(`feeding status context missing ${id}`);
@@ -114,19 +115,16 @@ jobs:
             if(c.answers.some(a=>weak.has(a)))fail(`weak cloze term remains ${id}: ${c.answers}`);
           }
 
-          // B2 cloze design: all 13 excessive-hole cards now have <=3 answers.
-          const holeIds=[32,40,76,119,289,292,335,385,402,403,1106,1333,1379];
+          const holeIds=[32,40,76,119,259,289,292,335,385,402,403,970,1106,1333,1379];
           for(const id of holeIds){const c=byId(id);if(!c)fail(`hole-design card missing ${id}`);if(c.answers.length>3)fail(`hole-design count still high ${id}: ${c.answers.length}`);}
           if(byId(1106).text.includes('Coarse crackles（'))fail('Coarse crackles alias still parsed as cloze');
 
-          // Long-phrase cards: the flagged long phrases have been reduced to core terms.
-          const longIds=[98,122,133,227,331,351,359,424,598,599,608,612,613,618,619,620,735,737,754,824,1018,1062,1092,1093,1101,1157,1163,1164,1224,1234];
+          const longIds=[98,122,133,227,331,351,359,424,598,599,608,612,613,618,619,620,735,737,746,754,824,1018,1062,1092,1093,1101,1157,1163,1164,1224,1234];
           for(const id of longIds){const c=byId(id);if(!c)fail(`long-cloze card missing ${id}`);if(!String(c.qa_fixed).includes('B2'))fail(`B2 marker missing ${id}`);}
           eq(byId(122).answers[0],'2回以上','MWST5 threshold shortened');
           eq(byId(598).answers[0],'随意的嚥下','pediatric long cloze shortened');
           eq(byId(1093).answers[0],'150mmHg以下','suction pressure cloze shortened');
 
-          // All 15 near-duplicate pairs are consolidated to one surviving ID.
           const nearPairs=[[824,892],[822,931],[646,661],[1024,1162],[134,217],[133,204],[176,186],[830,843],[823,896],[825,893],[1360,36],[125,151],[826,876],[827,908],[828,917]];
           for(const [keep,drop] of nearPairs){if(!byId(keep))fail(`near-duplicate retained card missing ${keep}`);if(byId(drop))fail(`near-duplicate card not removed ${drop}`);}
           eq(byId(125).text,'DSS3［水分誤嚥レベル］では、（水分）は誤嚥するが、（工夫した食物）は誤嚥しない。','DSS duplicate integrated');
@@ -139,13 +137,11 @@ jobs:
           const sortedObj=o=>Object.fromEntries(Object.entries(o).sort((a,b)=>Number(a[0])-Number(b[0])));
           if(JSON.stringify(sortedObj(mergeMap))!==JSON.stringify(sortedObj(expectedMerge)))fail(`merge map mismatch ${JSON.stringify(mergeMap)}`);
 
-          // No literal duplicate cards remain after S/A/B2 consolidation.
           const literalGroups=new Map();
           for(const c of cards){if(!literalGroups.has(c.text))literalGroups.set(c.text,[]);literalGroups.get(c.text).push(c.id);}
           const literals=[...literalGroups.entries()].filter(([,v])=>v.length>1);
           if(literals.length)fail(`literal duplicates remain: ${JSON.stringify(literals.slice(0,10))}`);
 
-          // Simulate both A and B2 duplicate-progress migration.
           ctx.state={
             progress:{824:{status:'good',uncertain:false,bookmarked:false,attempts:2,good:2,review:0,lastAt:'2026-08-18T10:00:00Z'},892:{status:'review',uncertain:true,bookmarked:true,attempts:3,good:0,review:3,lastAt:'2026-08-19T10:00:00Z'},829:{status:'good',attempts:1,good:1,review:0},849:{status:'review',attempts:1,good:0,review:1}},
             memoryProgress:{824:{status:'memorized',attempts:1,remembered:1,again:0},892:{status:'learning',attempts:2,remembered:0,again:2}},
@@ -161,5 +157,5 @@ jobs:
           if(new Set(migrated.lastSession.ids).size!==migrated.lastSession.ids.length)fail('lastSession not deduplicated');
           if(migrated.lastSession.ids.some(id=>excluded.includes(id)))fail('lastSession contains excluded ID');
 
-          console.log(`QA PASS: ${cards.length} active cards, ${meta.answer_terms} cloze terms; S+A+B2 fixes and 21 history merges verified.`);
+          console.log(`QA PASS: ${cards.length} active cards, ${meta.answer_terms} cloze terms; S+A+B2 overlap fixes and 21 history merges verified.`);
           NODE
