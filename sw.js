@@ -1,9 +1,9 @@
 const CACHE_PREFIX = 'swallow-cloze-614-new-';
-const CACHE = CACHE_PREFIX + 'v17-compact1390-qaSA';
+const CACHE = CACHE_PREFIX + 'v18-compact1390-qaSAB1';
 const ASSETS = [
   './','./index.html','./manifest.json','./styles.css',
   './data-sections-01-05.js','./data-sections-06-09.js','./data-sections-10-13.js','./data-sections-14-17.js',
-  './data.js','./qa-data-patch.js','./core.js','./qa-progress-migration.js','./data-transfer.js','./results.js','./memory.js'
+  './data.js','./qa-data-patch.js','./qa-b-context-patch.js','./core.js','./qa-progress-migration.js','./data-transfer.js','./results.js','./memory.js'
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
