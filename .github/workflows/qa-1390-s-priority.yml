@@ -1,4 +1,4 @@
-name: QA 1390 dataset S-priority fixes
+name: QA 1390 dataset S+A priority fixes
 
 on:
   push:
@@ -27,11 +27,12 @@ jobs:
           node --check data.js
           node --check qa-data-patch.js
           node --check core.js
+          node --check qa-progress-migration.js
           node --check data-transfer.js
           node --check results.js
           node --check memory.js
           node --check sw.js
-      - name: Dataset QA
+      - name: Dataset and migration QA
         run: |
           node <<'NODE'
           const fs=require('fs');
@@ -45,37 +46,41 @@ jobs:
           ]) vm.runInContext(fs.readFileSync(f,'utf8'),ctx,{filename:f});
 
           const snapshot=vm.runInContext(`({
-            cards: DATA.cards.map(c=>({id:c.id,ref:c.ref,text:c.text,answers:c.answers,category:c.category})),
+            cards: DATA.cards.map(c=>({id:c.id,ref:c.ref,text:c.text,answers:c.answers,category:c.category,qa_fixed:c.qa_fixed})),
             meta: {...DATA.meta},
-            categories: DATA.categories.map(c=>({...c}))
+            categories: DATA.categories.map(c=>({...c})),
+            mergeMap: {...globalThis.DATA_QA_PROGRESS_MERGE_MAP}
           })`,ctx);
-          const {cards,meta,categories}=snapshot;
-          const fail=(m)=>{throw new Error(m)};
+          const {cards,meta,categories,mergeMap}=snapshot;
+          const fail=m=>{throw new Error(m)};
           const eq=(a,b,m)=>{if(a!==b)fail(`${m}: expected ${b}, got ${a}`)};
+          const byId=id=>cards.find(c=>c.id===id);
 
-          eq(cards.length,1386,'active card count');
-          eq(meta.actual_cards,1386,'meta card count');
-          eq(meta.answer_terms,2378,'answer term count');
-          eq(categories.reduce((n,c)=>n+c.actual,0),1386,'category card sum');
-          eq(categories.reduce((n,c)=>n+c.answer_terms,0),2378,'category answer sum');
+          eq(cards.length,1380,'active card count');
+          eq(meta.actual_cards,1380,'meta card count');
+          eq(meta.answer_terms,2367,'answer term count');
+          eq(categories.reduce((n,c)=>n+c.actual,0),1380,'category card sum');
+          eq(categories.reduce((n,c)=>n+c.answer_terms,0),2367,'category answer sum');
 
           const ids=cards.map(c=>c.id);
           eq(new Set(ids).size,ids.length,'unique IDs');
-          const excluded=[231,243,400,537];
-          for(const id of excluded) if(ids.includes(id)) fail(`excluded heading ID remains: ${id}`);
+          const excluded=[231,243,400,537,849,944,961,967,981,1292];
+          for(const id of excluded)if(ids.includes(id))fail(`excluded ID remains: ${id}`);
           const gaps=[];
-          for(let i=1;i<=1390;i++) if(!ids.includes(i)) gaps.push(i);
-          if(JSON.stringify(gaps)!==JSON.stringify(excluded)) fail(`unexpected ID gaps: ${gaps}`);
+          for(let i=1;i<=1390;i++)if(!ids.includes(i))gaps.push(i);
+          if(JSON.stringify(gaps)!==JSON.stringify(excluded))fail(`unexpected ID gaps: ${gaps}`);
 
           for(const c of cards){
-            if(!Array.isArray(c.answers)||!c.answers.length) fail(`card has no cloze answer: ${c.id}`);
-            if(c.answers.some(a=>!String(a).trim())) fail(`blank cloze answer: ${c.id}`);
+            if(!Array.isArray(c.answers)||!c.answers.length)fail(`card has no cloze answer: ${c.id}`);
+            if(c.answers.some(a=>!String(a).trim()))fail(`blank cloze answer: ${c.id}`);
             const opens=(c.text.match(/（/g)||[]).length;
             const closes=(c.text.match(/）/g)||[]).length;
-            if(opens!==closes) fail(`full-width bracket mismatch: ${c.id} ${c.text}`);
+            if(opens!==closes)fail(`full-width bracket mismatch: ${c.id} ${c.text}`);
+            const parsed=[...c.text.matchAll(/（([^（）]+)）/g)].map(m=>m[1]);
+            if(JSON.stringify(c.answers)!==JSON.stringify(parsed))fail(`answer extraction mismatch: ${c.id}`);
           }
 
-          const expected=new Map([
+          const sExpected=new Map([
             [112,'構成失行の主な責任病巣（右頭頂葉）'],
             [242,'プロフィール5は、（むせることがしばしば）で、（全量飲むことが困難）である。'],
             [293,'K-point刺激の対象には、（嚥下反射惹起遅延）（重度嚥下障害）も含まれる。'],
@@ -84,13 +89,71 @@ jobs:
             [746,'レビー小体型認知症などで視空間認知障害がある場合は、（できる動作に合わせて食器の位置を調整）する。'],
             [1042,'ACE阻害薬カプトプリルでは、（サブスタンスP増加）などを介して（嚥下反射）（咳反射）の改善がみられることがある。']
           ]);
-          for(const [id,text] of expected){
-            const c=cards.find(x=>x.id===id);
-            if(!c) fail(`fixed card missing: ${id}`);
-            eq(c.text,text,`fixed text ${id}`);
-            const parsed=[...text.matchAll(/（([^（）]+)）/g)].map(m=>m[1]);
-            if(JSON.stringify(c.answers)!==JSON.stringify(parsed)) fail(`answer extraction mismatch: ${id}`);
+          for(const [id,text] of sExpected){
+            const c=byId(id);if(!c)fail(`S fixed card missing ${id}`);
+            eq(c.text,text,`S fixed text ${id}`);eq(c.qa_fixed,'S',`S marker ${id}`);
           }
 
-          console.log(`QA PASS: ${cards.length} active cards, ${meta.answer_terms} cloze terms, stable IDs with 4 intentional gaps.`);
+          const prefixes=new Map([
+            [245,'MWSTでは、'],[246,'MWSTでは、'],[247,'MWSTでは、'],[248,'MWSTの評価基準1点は、'],
+            [249,'MWSTの評価基準2点は、'],[250,'MWSTの評価基準3点は、'],[251,'MWSTの評価基準4点は、'],[252,'MWSTの評価基準5点は、'],
+            [254,'フードテストでは、'],[255,'フードテストでは、'],[256,'フードテストでは、'],[257,'フードテストの評価基準1点は、'],
+            [258,'フードテストの評価基準2点は、'],[259,'フードテストの評価基準3点は、'],[260,'フードテストの評価基準4点は、'],[261,'フードテストの評価基準5点は、'],
+            [266,'開口訓練の主な対象は、'],[270,'頭部挙上訓練の主な対象は、'],[273,'前舌保持嚥下訓練［Masako法］の主な対象は、'],
+            [275,'前舌保持嚥下訓練［Masako法］は'],[288,'バルーン拡張法の主な対象は、'],[291,'チューブ嚥下訓練の主な対象は、'],
+            [309,'息こらえ嚥下法の主な対象は、'],[314,'メンデルソン手技の主な対象は、'],[319,'頸部回旋の主な対象は'],
+            [324,'頸部屈曲位［chin-down］の主な対象は、'],[330,'努力嚥下の主な対象は、'],[354,'顎突出嚥下の主な対象は'],
+            [363,'氷なめ訓練の主な対象は'],[369,'LSVTの主な対象は'],[371,'のどのアイスマッサージの主な対象は'],
+            [373,'歯肉マッサージ［ガム・ラビング］の主な対象は'],[376,'過敏除去［脱感作］の主な対象は'],[391,'一側嚥下の主な対象は'],
+            [943,'ギラン・バレー症候群の治療には'],[945,'ギラン・バレー症候群では、さらに'],[955,'炎症性筋疾患・皮膚筋炎の治療には'],
+            [970,'重症筋無力症では、症状として'],[975,'重症筋無力症の薬物治療には']
+          ]);
+          for(const [id,prefix] of prefixes){
+            const c=byId(id);if(!c)fail(`A fixed card missing ${id}`);
+            if(!c.text.startsWith(prefix))fail(`A context not restored ${id}: ${c.text}`);
+            eq(c.qa_fixed,'A',`A marker ${id}`);
+          }
+
+          const expectedMerge={849:829,944:821,961:833,967:832,981:820,1292:1289};
+          if(JSON.stringify(mergeMap)!==JSON.stringify(expectedMerge))fail(`merge map mismatch ${JSON.stringify(mergeMap)}`);
+
+          const literalGroups=new Map();
+          for(const c of cards){
+            if(!literalGroups.has(c.text))literalGroups.set(c.text,[]);
+            literalGroups.get(c.text).push(c.id);
+          }
+          const literals=[...literalGroups.entries()].filter(([,v])=>v.length>1);
+          if(literals.length)fail(`literal duplicates remain: ${JSON.stringify(literals.slice(0,10))}`);
+
+          // Simulate duplicate-progress migration and verify conservative status merging.
+          ctx.state={
+            progress:{
+              829:{status:'good',uncertain:false,bookmarked:false,attempts:2,good:2,review:0,lastAt:'2026-08-18T10:00:00Z'},
+              849:{status:'review',uncertain:true,bookmarked:true,attempts:3,good:0,review:3,lastAt:'2026-08-19T10:00:00Z'}
+            },
+            memoryProgress:{
+              829:{status:'memorized',attempts:1,remembered:1,again:0,lastAt:'2026-08-18T10:00:00Z'},
+              849:{status:'learning',attempts:2,remembered:0,again:2,lastAt:'2026-08-19T10:00:00Z'}
+            },
+            lastSession:{ids:[820,829,849,944,821],pos:2},
+            memorySession:{initialIds:[829,849],ids:[849,829],pos:0,nextIds:[849]}
+          };
+          ctx.STORE_KEY='qa-test';
+          ctx.localStorage={setItem(){}};
+          ctx.refreshSummary=()=>{};
+          vm.runInContext(fs.readFileSync('qa-progress-migration.js','utf8'),ctx,{filename:'qa-progress-migration.js'});
+          const migrated=ctx.state;
+          if(migrated.progress['849'])fail('source normal progress not removed');
+          eq(migrated.progress['829'].status,'review','normal status precedence');
+          eq(migrated.progress['829'].attempts,5,'normal attempts merged');
+          eq(migrated.progress['829'].uncertain,true,'normal uncertain merged');
+          eq(migrated.progress['829'].bookmarked,true,'normal bookmark merged');
+          if(migrated.memoryProgress['849'])fail('source memory progress not removed');
+          eq(migrated.memoryProgress['829'].status,'learning','memory status precedence');
+          eq(migrated.memoryProgress['829'].attempts,3,'memory attempts merged');
+          if(new Set(migrated.lastSession.ids).size!==migrated.lastSession.ids.length)fail('lastSession not deduplicated');
+          if(migrated.lastSession.ids.some(id=>excluded.includes(id)))fail('lastSession contains excluded ID');
+          if(migrated.memorySession.ids.some(id=>excluded.includes(id)))fail('memorySession contains excluded ID');
+
+          console.log(`QA PASS: ${cards.length} active cards, ${meta.answer_terms} cloze terms; S11 + A51 fixes verified; duplicate history migration verified.`);
           NODE
