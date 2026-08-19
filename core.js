@@ -1,5 +1,5 @@
 const STORE_KEY='swallow_cloze_614_independent_pwa_v1';
-const DATA_MIGRATION_VERSION='compact1390-v1';
+const DATA_MIGRATION_VERSION='canonical1380-v1';
 const CURRENT_IDS=new Set(DATA.cards.map(c=>String(c.id)));
 let state=loadState();
 let session={ids:[],pos:0,answerShown:false};
@@ -27,7 +27,7 @@ function migrateState(s){
     archives.push({
       archivedAt:new Date().toISOString(),
       fromDataMigrationVersion:s.dataMigrationVersion||'legacy-unknown',
-      reason:'problem-dataset-replaced-with-compact1390',
+      reason:'problem-dataset-replaced-with-canonical1380',
       progress:s.progress&&typeof s.progress==='object'?s.progress:{},
       lastSession:s.lastSession||null,
       memoryProgress:s.memoryProgress&&typeof s.memoryProgress==='object'?s.memoryProgress:{},
@@ -84,5 +84,5 @@ function switchView(v){['home','study','stats','data'].forEach(x=>$('#'+x+'View'
 function searchCards(q){q=q.trim().toLowerCase();let box=$('#searchResults');if(!q){box.innerHTML='<div class="muted" style="padding:10px">分野名・症候名・評価尺度・訓練名などで検索できます。</div>';return}let hits=DATA.cards.filter(c=>`${c.text} ${c.ref} ${c.category}`.toLowerCase().includes(q)).slice(0,50);box.innerHTML=hits.length?hits.map(c=>`<div class="search-item" data-id="${c.id}"><b>${esc(c.category_symbol+' '+c.category)} ・ [${esc(c.ref)}]</b><p>${esc(c.text.replace(/\n/g,' ')).slice(0,170)}${c.text.length>170?'…':''}</p></div>`).join(''):'<div class="muted" style="padding:10px">該当なし</div>';$$('.search-item').forEach(el=>el.onclick=()=>{session={ids:[Number(el.dataset.id)],pos:0,answerShown:false};switchView('study');renderCard()})}
 function resetProgress(){if(!confirm('現在の穴抜き・暗記の学習履歴、自信なし、ブックマークを削除します。過去データのアーカイブは保持されます。よろしいですか？'))return;state={progress:{},lastSession:null,memoryProgress:{},memorySession:null,archivedProgress:state.archivedProgress||{},archivedDataSets:Array.isArray(state.archivedDataSets)?state.archivedDataSets:[],dataMigrationVersion:DATA_MIGRATION_VERSION};saveState();alert('現在の学習履歴をリセットしました。')}
 function exportProgress(){let blob=new Blob([JSON.stringify({app:'swallow_cloze_trainer_v1',exportedAt:new Date().toISOString(),state},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='摂食嚥下_厳選コンパクト版_学習履歴_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href)}
-function importProgress(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let obj=JSON.parse(r.result),s=obj.state||obj;if(!s||typeof s!=='object')throw 0;state=migrateState(s);saveState();alert(s.dataMigrationVersion===DATA_MIGRATION_VERSION?'学習履歴を読み込みました。':'旧問題データの履歴をアーカイブしました。新1390カードには引き継いでいません。')}catch(_){alert('読み込める学習履歴JSONではありません。')}e.target.value=''};r.readAsText(f)}
+function importProgress(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let obj=JSON.parse(r.result),s=obj.state||obj;if(!s||typeof s!=='object')throw 0;state=migrateState(s);saveState();alert(s.dataMigrationVersion===DATA_MIGRATION_VERSION?'学習履歴を読み込みました。':'旧問題データの履歴をアーカイブしました。新1380カードには引き継いでいません。')}catch(_){alert('読み込める学習履歴JSONではありません。')}e.target.value=''};r.readAsText(f)}
 init();

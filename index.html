@@ -58,8 +58,8 @@
 </section>
 
 <section id="dataView" class="hidden">
- <div class="panel"><h2>収録データ</h2><p id="metaText"></p><div class="notice">「摂食嚥下認定_厳選コンパクト版.docx」を基礎データとし、S/A判定QAで誤字・括弧不整合、文脈欠落、完全重複を整理しています。既存のカードIDは維持しています。</div><table class="data-table"><thead><tr><th>分野</th><th>カード数</th></tr></thead><tbody id="catTable"></tbody></table></div>
- <div class="panel"><h2>データ更新</h2><p class="muted">旧549カードとは問題データを全面的に入れ替えています。旧版の学習履歴・暗記履歴は新問題へ誤って紐付けず、端末内のアーカイブとして保持します。現在の学習データはS/A判定QA修正後の1380カードです。</p><div class="footer-note">見出し誤カード4件と真の完全重複6件を除外。MWST・フードテスト、手技、疾患の文脈欠落はカード本文に主語を補って修正しています。</div></div>
+ <div class="panel"><h2>収録データ</h2><p id="metaText"></p><div class="notice">「摂食嚥下認定_厳選コンパクト版.docx」を基礎データとし、医学・内容監査で確定した修正を反映しています。尺度名・手技名・検査名・疾患名は一律に補完せず、原資料の文脈構成を維持しています。既存のカードIDは維持しています。</div><table class="data-table"><thead><tr><th>分野</th><th>カード数</th></tr></thead><tbody id="catTable"></tbody></table></div>
+ <div class="panel"><h2>データ更新</h2><p class="muted">現在の学習データは医学・内容監査済みの1,380カードです。既存1,390版からの更新では、正答語句が変わるカードのみ学習履歴を選択的に外し、それ以外の既存IDの履歴は維持します。</p><div class="footer-note">見出し誤カード4件と真の完全重複6件を除外。医学的誤り・正答・明確な誤字や括弧崩れを修正しています。</div></div>
  <div class="panel"><h2>バックアップ</h2><p class="muted">学習履歴はこの端末のブラウザ内に保存されます。JSONで書き出して別端末へ移せます。</p><div class="actions"><button class="btn secondary" id="exportBtn">学習履歴を書き出す</button><label class="btn ghost" for="importFile">学習履歴を読み込む</label><input id="importFile" type="file" accept="application/json" class="hidden"></div></div>
 </section>
 </main>
@@ -69,9 +69,10 @@
 <script src="./data-sections-10-13.js?v=1"></script>
 <script src="./data-sections-14-17.js?v=1"></script>
 <script src="./data.js?v=2"></script>
-<script src="./data-qa-fixes.js?v=2"></script>
-<script src="./core.js?v=2"></script>
-<script src="./data-transfer.js?v=3"></script>
+<script src="./data-qa-fixes.js?v=3"></script>
+<script src="./data-progress-migration.js?v=1"></script>
+<script src="./core.js?v=3"></script>
+<script src="./data-transfer.js?v=4"></script>
 <script src="./results.js?v=1"></script>
 <script src="./memory.js?v=1"></script>
 </body></html>
