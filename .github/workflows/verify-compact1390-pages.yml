@@ -1,0 +1,43 @@
+name: Verify compact 1390 production
+on:
+  workflow_run:
+    workflows: ["Deploy PWA to GitHub Pages"]
+    types: [completed]
+permissions:
+  contents: write
+jobs:
+  verify:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Verify deployed production files
+        run: |
+          set -euo pipefail
+          base='https://ken303867-png.github.io/swallow-cloze-614'
+          ok=0
+          for i in $(seq 1 20); do
+            q="${GITHUB_RUN_ID}-${i}"
+            if curl -fsSL "${base}/index.html?v=${q}" | grep -q '正文化穴抜き1390' \
+              && curl -fsSL "${base}/data.js?v=${q}" | grep -q '"actual_cards":1390' \
+              && curl -fsSL "${base}/data.js?v=${q}" | grep -q '"answer_terms":2381' \
+              && curl -fsSL "${base}/sw.js?v=${q}" | grep -q 'v15-compact1390'; then
+              ok=1
+              break
+            fi
+            sleep 5
+          done
+          test "$ok" = 1
+      - name: Record successful production verification
+        run: |
+          if [ -f .pages-verified-compact1390 ]; then
+            exit 0
+          fi
+          printf 'Verified production: 1390 cards / 2381 cloze terms / v15-compact1390\nPages workflow run: %s\n' "${{ github.event.workflow_run.id }}" > .pages-verified-compact1390
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .pages-verified-compact1390
+          git commit -m "Record compact 1390 production verification"
+          git push origin HEAD:main
