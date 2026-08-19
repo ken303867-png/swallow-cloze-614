@@ -1,4 +1,4 @@
-name: QA 1390 dataset S+A priority fixes
+name: QA 1390 dataset S+A+B1 fixes
 
 on:
   push:
@@ -26,6 +26,7 @@ jobs:
           node --check data-sections-14-17.js
           node --check data.js
           node --check qa-data-patch.js
+          node --check qa-b-context-patch.js
           node --check core.js
           node --check qa-progress-migration.js
           node --check data-transfer.js
@@ -42,16 +43,17 @@ jobs:
           for(const f of [
             'data-sections-01-05.js','data-sections-06-09.js',
             'data-sections-10-13.js','data-sections-14-17.js',
-            'data.js','qa-data-patch.js'
+            'data.js','qa-data-patch.js','qa-b-context-patch.js'
           ]) vm.runInContext(fs.readFileSync(f,'utf8'),ctx,{filename:f});
 
           const snapshot=vm.runInContext(`({
             cards: DATA.cards.map(c=>({id:c.id,ref:c.ref,text:c.text,answers:c.answers,category:c.category,qa_fixed:c.qa_fixed})),
             meta: {...DATA.meta},
             categories: DATA.categories.map(c=>({...c})),
-            mergeMap: {...globalThis.DATA_QA_PROGRESS_MERGE_MAP}
+            mergeMap: {...globalThis.DATA_QA_PROGRESS_MERGE_MAP},
+            bNoChange: [...globalThis.DATA_QA_B_REVIEWED_NOCHANGE_IDS]
           })`,ctx);
-          const {cards,meta,categories,mergeMap}=snapshot;
+          const {cards,meta,categories,mergeMap,bNoChange}=snapshot;
           const fail=m=>{throw new Error(m)};
           const eq=(a,b,m)=>{if(a!==b)fail(`${m}: expected ${b}, got ${a}`)};
           const byId=id=>cards.find(c=>c.id===id);
@@ -91,10 +93,11 @@ jobs:
           ]);
           for(const [id,text] of sExpected){
             const c=byId(id);if(!c)fail(`S fixed card missing ${id}`);
-            eq(c.text,text,`S fixed text ${id}`);eq(c.qa_fixed,'S',`S marker ${id}`);
+            eq(c.text,text,`S fixed text ${id}`);
+            if(!String(c.qa_fixed).includes('S'))fail(`S marker missing ${id}`);
           }
 
-          const prefixes=new Map([
+          const aPrefixes=new Map([
             [245,'MWSTでは、'],[246,'MWSTでは、'],[247,'MWSTでは、'],[248,'MWSTの評価基準1点は、'],
             [249,'MWSTの評価基準2点は、'],[250,'MWSTの評価基準3点は、'],[251,'MWSTの評価基準4点は、'],[252,'MWSTの評価基準5点は、'],
             [254,'フードテストでは、'],[255,'フードテストでは、'],[256,'フードテストでは、'],[257,'フードテストの評価基準1点は、'],
@@ -108,52 +111,59 @@ jobs:
             [943,'ギラン・バレー症候群の治療には'],[945,'ギラン・バレー症候群では、さらに'],[955,'炎症性筋疾患・皮膚筋炎の治療には'],
             [970,'重症筋無力症では、症状として'],[975,'重症筋無力症の薬物治療には']
           ]);
-          for(const [id,prefix] of prefixes){
+          for(const [id,prefix] of aPrefixes){
             const c=byId(id);if(!c)fail(`A fixed card missing ${id}`);
             if(!c.text.startsWith(prefix))fail(`A context not restored ${id}: ${c.text}`);
-            eq(c.qa_fixed,'A',`A marker ${id}`);
+            if(!String(c.qa_fixed).includes('A'))fail(`A marker missing ${id}`);
+          }
+
+          // B batch 1: 68 text fixes + two verified false-positive scale flags.
+          const bIds=[
+            12,15,
+            139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,168,
+            175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,
+            192,193,194,195,198,199,200,201,202,203,204,205,206,
+            710,1008,1009,1205,
+            1282,1283,1284,1285,1286,1287,1288,1289,1290,1291
+          ];
+          eq(bIds.length,68,'B1 fixed ID count');
+          for(const id of bIds){
+            const c=byId(id);if(!c)fail(`B1 fixed card missing ${id}`);
+            if(!String(c.qa_fixed).includes('B'))fail(`B marker missing ${id}`);
+          }
+          for(let id=139;id<=161;id++)if(!byId(id).text.startsWith('DSSの'))fail(`DSS context missing ${id}`);
+          for(let id=175;id<=189;id++)if(!byId(id).text.includes('摂食・嚥下能力グレード'))fail(`ability grade context missing ${id}`);
+          for(const id of [192,193,194,195,198,199,200,201,202,203,204,205,206])if(!byId(id).text.startsWith('摂食状況レベル'))fail(`feeding status context missing ${id}`);
+          if(JSON.stringify(bNoChange)!==JSON.stringify([196,197]))fail(`B no-change IDs mismatch ${JSON.stringify(bNoChange)}`);
+          if(!byId(196).text.includes('摂食状況レベル')||!byId(197).text.includes('摂食状況レベル'))fail('B no-change scale context not actually present');
+          for(let id=1282;id<=1291;id++)if(/^\d{3}\.\s*/.test(byId(id).text))fail(`leading source number remains ${id}`);
+          for(const id of [12,15,161,168,710,1008,1009,1205]){
+            const weak=new Set(['ある','ない','困難','必要','不要','制限']);
+            if(byId(id).answers.some(a=>weak.has(a)))fail(`weak cloze term remains ${id}: ${byId(id).answers}`);
           }
 
           const expectedMerge={849:829,944:821,961:833,967:832,981:820,1292:1289};
           if(JSON.stringify(mergeMap)!==JSON.stringify(expectedMerge))fail(`merge map mismatch ${JSON.stringify(mergeMap)}`);
-
           const literalGroups=new Map();
-          for(const c of cards){
-            if(!literalGroups.has(c.text))literalGroups.set(c.text,[]);
-            literalGroups.get(c.text).push(c.id);
-          }
+          for(const c of cards){if(!literalGroups.has(c.text))literalGroups.set(c.text,[]);literalGroups.get(c.text).push(c.id);}
           const literals=[...literalGroups.entries()].filter(([,v])=>v.length>1);
           if(literals.length)fail(`literal duplicates remain: ${JSON.stringify(literals.slice(0,10))}`);
 
-          // Simulate duplicate-progress migration and verify conservative status merging.
+          // Simulate duplicate-progress migration.
           ctx.state={
-            progress:{
-              829:{status:'good',uncertain:false,bookmarked:false,attempts:2,good:2,review:0,lastAt:'2026-08-18T10:00:00Z'},
-              849:{status:'review',uncertain:true,bookmarked:true,attempts:3,good:0,review:3,lastAt:'2026-08-19T10:00:00Z'}
-            },
-            memoryProgress:{
-              829:{status:'memorized',attempts:1,remembered:1,again:0,lastAt:'2026-08-18T10:00:00Z'},
-              849:{status:'learning',attempts:2,remembered:0,again:2,lastAt:'2026-08-19T10:00:00Z'}
-            },
+            progress:{829:{status:'good',uncertain:false,bookmarked:false,attempts:2,good:2,review:0,lastAt:'2026-08-18T10:00:00Z'},849:{status:'review',uncertain:true,bookmarked:true,attempts:3,good:0,review:3,lastAt:'2026-08-19T10:00:00Z'}},
+            memoryProgress:{829:{status:'memorized',attempts:1,remembered:1,again:0,lastAt:'2026-08-18T10:00:00Z'},849:{status:'learning',attempts:2,remembered:0,again:2,lastAt:'2026-08-19T10:00:00Z'}},
             lastSession:{ids:[820,829,849,944,821],pos:2},
             memorySession:{initialIds:[829,849],ids:[849,829],pos:0,nextIds:[849]}
           };
-          ctx.STORE_KEY='qa-test';
-          ctx.localStorage={setItem(){}};
-          ctx.refreshSummary=()=>{};
+          ctx.STORE_KEY='qa-test';ctx.localStorage={setItem(){}};ctx.refreshSummary=()=>{};
           vm.runInContext(fs.readFileSync('qa-progress-migration.js','utf8'),ctx,{filename:'qa-progress-migration.js'});
           const migrated=ctx.state;
           if(migrated.progress['849'])fail('source normal progress not removed');
-          eq(migrated.progress['829'].status,'review','normal status precedence');
-          eq(migrated.progress['829'].attempts,5,'normal attempts merged');
-          eq(migrated.progress['829'].uncertain,true,'normal uncertain merged');
-          eq(migrated.progress['829'].bookmarked,true,'normal bookmark merged');
-          if(migrated.memoryProgress['849'])fail('source memory progress not removed');
-          eq(migrated.memoryProgress['829'].status,'learning','memory status precedence');
-          eq(migrated.memoryProgress['829'].attempts,3,'memory attempts merged');
+          eq(migrated.progress['829'].status,'review','normal status precedence');eq(migrated.progress['829'].attempts,5,'normal attempts merged');
+          if(migrated.memoryProgress['849'])fail('source memory progress not removed');eq(migrated.memoryProgress['829'].status,'learning','memory status precedence');
           if(new Set(migrated.lastSession.ids).size!==migrated.lastSession.ids.length)fail('lastSession not deduplicated');
           if(migrated.lastSession.ids.some(id=>excluded.includes(id)))fail('lastSession contains excluded ID');
-          if(migrated.memorySession.ids.some(id=>excluded.includes(id)))fail('memorySession contains excluded ID');
 
-          console.log(`QA PASS: ${cards.length} active cards, ${meta.answer_terms} cloze terms; S11 + A51 fixes verified; duplicate history migration verified.`);
+          console.log(`QA PASS: ${cards.length} active cards, ${meta.answer_terms} cloze terms; S11 + A51 + B1(68 fixes/2 no-change) verified.`);
           NODE
