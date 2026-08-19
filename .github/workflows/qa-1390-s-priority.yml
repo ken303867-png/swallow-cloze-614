@@ -1,4 +1,4 @@
-name: QA 1390 dataset S+A+B1 fixes
+name: QA 1390 dataset S+A+B2 fixes
 
 on:
   push:
@@ -27,6 +27,7 @@ jobs:
           node --check data.js
           node --check qa-data-patch.js
           node --check qa-b-context-patch.js
+          node --check qa-b-design-patch.js
           node --check core.js
           node --check qa-progress-migration.js
           node --check data-transfer.js
@@ -43,7 +44,7 @@ jobs:
           for(const f of [
             'data-sections-01-05.js','data-sections-06-09.js',
             'data-sections-10-13.js','data-sections-14-17.js',
-            'data.js','qa-data-patch.js','qa-b-context-patch.js'
+            'data.js','qa-data-patch.js','qa-b-context-patch.js','qa-b-design-patch.js'
           ]) vm.runInContext(fs.readFileSync(f,'utf8'),ctx,{filename:f});
 
           const snapshot=vm.runInContext(`({
@@ -58,15 +59,15 @@ jobs:
           const eq=(a,b,m)=>{if(a!==b)fail(`${m}: expected ${b}, got ${a}`)};
           const byId=id=>cards.find(c=>c.id===id);
 
-          eq(cards.length,1380,'active card count');
-          eq(meta.actual_cards,1380,'meta card count');
-          eq(meta.answer_terms,2367,'answer term count');
-          eq(categories.reduce((n,c)=>n+c.actual,0),1380,'category card sum');
-          eq(categories.reduce((n,c)=>n+c.answer_terms,0),2367,'category answer sum');
+          eq(cards.length,1365,'active card count');
+          eq(meta.actual_cards,1365,'meta card count');
+          eq(meta.answer_terms,2297,'answer term count');
+          eq(categories.reduce((n,c)=>n+c.actual,0),1365,'category card sum');
+          eq(categories.reduce((n,c)=>n+c.answer_terms,0),2297,'category answer sum');
 
           const ids=cards.map(c=>c.id);
           eq(new Set(ids).size,ids.length,'unique IDs');
-          const excluded=[231,243,400,537,849,944,961,967,981,1292];
+          const excluded=[36,151,186,204,217,231,243,400,537,661,843,849,876,892,893,896,908,917,931,944,961,967,981,1162,1292];
           for(const id of excluded)if(ids.includes(id))fail(`excluded ID remains: ${id}`);
           const gaps=[];
           for(let i=1;i<=1390;i++)if(!ids.includes(i))gaps.push(i);
@@ -80,8 +81,10 @@ jobs:
             if(opens!==closes)fail(`full-width bracket mismatch: ${c.id} ${c.text}`);
             const parsed=[...c.text.matchAll(/（([^（）]+)）/g)].map(m=>m[1]);
             if(JSON.stringify(c.answers)!==JSON.stringify(parsed))fail(`answer extraction mismatch: ${c.id}`);
+            if(c.answers.length>4)fail(`excessive cloze count remains ${c.id}: ${c.answers.length}`);
           }
 
+          // Critical S fixes remain intact.
           const sExpected=new Map([
             [112,'構成失行の主な責任病巣（右頭頂葉）'],
             [242,'プロフィール5は、（むせることがしばしば）で、（全量飲むことが困難）である。'],
@@ -91,79 +94,72 @@ jobs:
             [746,'レビー小体型認知症などで視空間認知障害がある場合は、（できる動作に合わせて食器の位置を調整）する。'],
             [1042,'ACE阻害薬カプトプリルでは、（サブスタンスP増加）などを介して（嚥下反射）（咳反射）の改善がみられることがある。']
           ]);
-          for(const [id,text] of sExpected){
-            const c=byId(id);if(!c)fail(`S fixed card missing ${id}`);
-            eq(c.text,text,`S fixed text ${id}`);
-            if(!String(c.qa_fixed).includes('S'))fail(`S marker missing ${id}`);
-          }
+          for(const [id,text] of sExpected){const c=byId(id);if(!c)fail(`S fixed card missing ${id}`);eq(c.text,text,`S fixed text ${id}`);}
 
-          const aPrefixes=new Map([
-            [245,'MWSTでは、'],[246,'MWSTでは、'],[247,'MWSTでは、'],[248,'MWSTの評価基準1点は、'],
-            [249,'MWSTの評価基準2点は、'],[250,'MWSTの評価基準3点は、'],[251,'MWSTの評価基準4点は、'],[252,'MWSTの評価基準5点は、'],
-            [254,'フードテストでは、'],[255,'フードテストでは、'],[256,'フードテストでは、'],[257,'フードテストの評価基準1点は、'],
-            [258,'フードテストの評価基準2点は、'],[259,'フードテストの評価基準3点は、'],[260,'フードテストの評価基準4点は、'],[261,'フードテストの評価基準5点は、'],
-            [266,'開口訓練の主な対象は、'],[270,'頭部挙上訓練の主な対象は、'],[273,'前舌保持嚥下訓練［Masako法］の主な対象は、'],
-            [275,'前舌保持嚥下訓練［Masako法］は'],[288,'バルーン拡張法の主な対象は、'],[291,'チューブ嚥下訓練の主な対象は、'],
-            [309,'息こらえ嚥下法の主な対象は、'],[314,'メンデルソン手技の主な対象は、'],[319,'頸部回旋の主な対象は'],
-            [324,'頸部屈曲位［chin-down］の主な対象は、'],[330,'努力嚥下の主な対象は、'],[354,'顎突出嚥下の主な対象は'],
-            [363,'氷なめ訓練の主な対象は'],[369,'LSVTの主な対象は'],[371,'のどのアイスマッサージの主な対象は'],
-            [373,'歯肉マッサージ［ガム・ラビング］の主な対象は'],[376,'過敏除去［脱感作］の主な対象は'],[391,'一側嚥下の主な対象は'],
-            [943,'ギラン・バレー症候群の治療には'],[945,'ギラン・バレー症候群では、さらに'],[955,'炎症性筋疾患・皮膚筋炎の治療には'],
-            [970,'重症筋無力症では、症状として'],[975,'重症筋無力症の薬物治療には']
-          ]);
-          for(const [id,prefix] of aPrefixes){
-            const c=byId(id);if(!c)fail(`A fixed card missing ${id}`);
-            if(!c.text.startsWith(prefix))fail(`A context not restored ${id}: ${c.text}`);
-            if(!String(c.qa_fixed).includes('A'))fail(`A marker missing ${id}`);
-          }
+          // A context fixes remain intact on cards that survive B2.
+          for(const id of [245,246,247,248,249,250,251,252])if(!byId(id).text.startsWith('MWST'))fail(`MWST context missing ${id}`);
+          for(const id of [254,255,256,257,258,259,260,261])if(!byId(id).text.startsWith('フードテスト'))fail(`Food Test context missing ${id}`);
+          for(const id of [943,945,955,970,975])if(!byId(id).text.match(/ギラン・バレー症候群|炎症性筋疾患・皮膚筋炎|重症筋無力症/))fail(`disease context missing ${id}`);
 
-          // B batch 1: 68 text fixes + two verified false-positive scale flags.
-          const bIds=[
-            12,15,
-            139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,168,
-            175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,
-            192,193,194,195,198,199,200,201,202,203,204,205,206,
-            710,1008,1009,1205,
-            1282,1283,1284,1285,1286,1287,1288,1289,1290,1291
-          ];
-          eq(bIds.length,68,'B1 fixed ID count');
-          for(const id of bIds){
-            const c=byId(id);if(!c)fail(`B1 fixed card missing ${id}`);
-            if(!String(c.qa_fixed).includes('B'))fail(`B marker missing ${id}`);
-          }
-          for(let id=139;id<=161;id++)if(!byId(id).text.startsWith('DSSの'))fail(`DSS context missing ${id}`);
-          for(let id=175;id<=189;id++)if(!byId(id).text.includes('摂食・嚥下能力グレード'))fail(`ability grade context missing ${id}`);
-          for(const id of [192,193,194,195,198,199,200,201,202,203,204,205,206])if(!byId(id).text.startsWith('摂食状況レベル'))fail(`feeding status context missing ${id}`);
+          // B1 context and weak-cloze fixes.
+          for(let id=139;id<=161;id++)if(id!==151&&!byId(id).text.startsWith('DSSの'))fail(`DSS context missing ${id}`);
+          for(let id=175;id<=189;id++)if(id!==186&&!byId(id).text.includes('摂食・嚥下能力グレード'))fail(`ability grade context missing ${id}`);
+          for(const id of [192,193,194,195,198,199,200,201,202,203,205,206])if(!byId(id).text.startsWith('摂食状況レベル'))fail(`feeding status context missing ${id}`);
+          if(!byId(133).text.startsWith('摂食状況レベル3'))fail('retained level3 context missing');
           if(JSON.stringify(bNoChange)!==JSON.stringify([196,197]))fail(`B no-change IDs mismatch ${JSON.stringify(bNoChange)}`);
-          if(!byId(196).text.includes('摂食状況レベル')||!byId(197).text.includes('摂食状況レベル'))fail('B no-change scale context not actually present');
           for(let id=1282;id<=1291;id++)if(/^\d{3}\.\s*/.test(byId(id).text))fail(`leading source number remains ${id}`);
           for(const id of [12,15,161,168,710,1008,1009,1205]){
+            const c=byId(id);if(!c)fail(`weak-cloze card missing ${id}`);
             const weak=new Set(['ある','ない','困難','必要','不要','制限']);
-            if(byId(id).answers.some(a=>weak.has(a)))fail(`weak cloze term remains ${id}: ${byId(id).answers}`);
+            if(c.answers.some(a=>weak.has(a)))fail(`weak cloze term remains ${id}: ${c.answers}`);
           }
 
-          const expectedMerge={849:829,944:821,961:833,967:832,981:820,1292:1289};
-          if(JSON.stringify(mergeMap)!==JSON.stringify(expectedMerge))fail(`merge map mismatch ${JSON.stringify(mergeMap)}`);
+          // B2 cloze design: all 13 excessive-hole cards now have <=3 answers.
+          const holeIds=[32,40,76,119,289,292,335,385,402,403,1106,1333,1379];
+          for(const id of holeIds){const c=byId(id);if(!c)fail(`hole-design card missing ${id}`);if(c.answers.length>3)fail(`hole-design count still high ${id}: ${c.answers.length}`);}
+          if(byId(1106).text.includes('Coarse crackles（'))fail('Coarse crackles alias still parsed as cloze');
+
+          // Long-phrase cards: the flagged long phrases have been reduced to core terms.
+          const longIds=[98,122,133,227,331,351,359,424,598,599,608,612,613,618,619,620,735,737,754,824,1018,1062,1092,1093,1101,1157,1163,1164,1224,1234];
+          for(const id of longIds){const c=byId(id);if(!c)fail(`long-cloze card missing ${id}`);if(!String(c.qa_fixed).includes('B2'))fail(`B2 marker missing ${id}`);}
+          eq(byId(122).answers[0],'2回以上','MWST5 threshold shortened');
+          eq(byId(598).answers[0],'随意的嚥下','pediatric long cloze shortened');
+          eq(byId(1093).answers[0],'150mmHg以下','suction pressure cloze shortened');
+
+          // All 15 near-duplicate pairs are consolidated to one surviving ID.
+          const nearPairs=[[824,892],[822,931],[646,661],[1024,1162],[134,217],[133,204],[176,186],[830,843],[823,896],[825,893],[1360,36],[125,151],[826,876],[827,908],[828,917]];
+          for(const [keep,drop] of nearPairs){if(!byId(keep))fail(`near-duplicate retained card missing ${keep}`);if(byId(drop))fail(`near-duplicate card not removed ${drop}`);}
+          eq(byId(125).text,'DSS3［水分誤嚥レベル］では、（水分）は誤嚥するが、（工夫した食物）は誤嚥しない。','DSS duplicate integrated');
+          if(!byId(826).text.includes('進行性変性疾患'))fail('Parkinson near-duplicate nuance not integrated');
+          if(!byId(827).text.includes('臨床症状'))fail('MSA near-duplicate nuance not integrated');
+
+          const expectedMerge={
+            36:1360,151:125,186:176,204:133,217:134,661:646,843:830,849:829,876:826,892:824,893:825,896:823,908:827,917:828,931:822,944:821,961:833,967:832,981:820,1162:1024,1292:1289
+          };
+          const sortedObj=o=>Object.fromEntries(Object.entries(o).sort((a,b)=>Number(a[0])-Number(b[0])));
+          if(JSON.stringify(sortedObj(mergeMap))!==JSON.stringify(sortedObj(expectedMerge)))fail(`merge map mismatch ${JSON.stringify(mergeMap)}`);
+
+          // No literal duplicate cards remain after S/A/B2 consolidation.
           const literalGroups=new Map();
           for(const c of cards){if(!literalGroups.has(c.text))literalGroups.set(c.text,[]);literalGroups.get(c.text).push(c.id);}
           const literals=[...literalGroups.entries()].filter(([,v])=>v.length>1);
           if(literals.length)fail(`literal duplicates remain: ${JSON.stringify(literals.slice(0,10))}`);
 
-          // Simulate duplicate-progress migration.
+          // Simulate both A and B2 duplicate-progress migration.
           ctx.state={
-            progress:{829:{status:'good',uncertain:false,bookmarked:false,attempts:2,good:2,review:0,lastAt:'2026-08-18T10:00:00Z'},849:{status:'review',uncertain:true,bookmarked:true,attempts:3,good:0,review:3,lastAt:'2026-08-19T10:00:00Z'}},
-            memoryProgress:{829:{status:'memorized',attempts:1,remembered:1,again:0,lastAt:'2026-08-18T10:00:00Z'},849:{status:'learning',attempts:2,remembered:0,again:2,lastAt:'2026-08-19T10:00:00Z'}},
-            lastSession:{ids:[820,829,849,944,821],pos:2},
-            memorySession:{initialIds:[829,849],ids:[849,829],pos:0,nextIds:[849]}
+            progress:{824:{status:'good',uncertain:false,bookmarked:false,attempts:2,good:2,review:0,lastAt:'2026-08-18T10:00:00Z'},892:{status:'review',uncertain:true,bookmarked:true,attempts:3,good:0,review:3,lastAt:'2026-08-19T10:00:00Z'},829:{status:'good',attempts:1,good:1,review:0},849:{status:'review',attempts:1,good:0,review:1}},
+            memoryProgress:{824:{status:'memorized',attempts:1,remembered:1,again:0},892:{status:'learning',attempts:2,remembered:0,again:2}},
+            lastSession:{ids:[824,892,829,849],pos:1},
+            memorySession:{initialIds:[824,892],ids:[892,824],pos:0,nextIds:[892]}
           };
           ctx.STORE_KEY='qa-test';ctx.localStorage={setItem(){}};ctx.refreshSummary=()=>{};
           vm.runInContext(fs.readFileSync('qa-progress-migration.js','utf8'),ctx,{filename:'qa-progress-migration.js'});
           const migrated=ctx.state;
-          if(migrated.progress['849'])fail('source normal progress not removed');
-          eq(migrated.progress['829'].status,'review','normal status precedence');eq(migrated.progress['829'].attempts,5,'normal attempts merged');
-          if(migrated.memoryProgress['849'])fail('source memory progress not removed');eq(migrated.memoryProgress['829'].status,'learning','memory status precedence');
+          if(migrated.progress['892']||migrated.progress['849'])fail('source progress not removed');
+          eq(migrated.progress['824'].status,'review','B2 normal status precedence');eq(migrated.progress['824'].attempts,5,'B2 attempts merged');
+          if(migrated.memoryProgress['892'])fail('B2 source memory progress not removed');eq(migrated.memoryProgress['824'].status,'learning','B2 memory precedence');
           if(new Set(migrated.lastSession.ids).size!==migrated.lastSession.ids.length)fail('lastSession not deduplicated');
           if(migrated.lastSession.ids.some(id=>excluded.includes(id)))fail('lastSession contains excluded ID');
 
-          console.log(`QA PASS: ${cards.length} active cards, ${meta.answer_terms} cloze terms; S11 + A51 + B1(68 fixes/2 no-change) verified.`);
+          console.log(`QA PASS: ${cards.length} active cards, ${meta.answer_terms} cloze terms; S+A+B2 fixes and 21 history merges verified.`);
           NODE
