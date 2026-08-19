@@ -1,0 +1,94 @@
+name: QA 1390 dataset S-priority fixes
+
+on:
+  push:
+    branches: ["qa-fix-1390-s-priority"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: |
+          node --check data-sections-01-05.js
+          node --check data-sections-06-09.js
+          node --check data-sections-10-13.js
+          node --check data-sections-14-17.js
+          node --check data.js
+          node --check qa-data-patch.js
+          node --check core.js
+          node --check data-transfer.js
+          node --check results.js
+          node --check memory.js
+          node --check sw.js
+      - name: Dataset QA
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const vm=require('vm');
+          const ctx={console};
+          vm.createContext(ctx);
+          for(const f of [
+            'data-sections-01-05.js','data-sections-06-09.js',
+            'data-sections-10-13.js','data-sections-14-17.js',
+            'data.js','qa-data-patch.js'
+          ]) vm.runInContext(fs.readFileSync(f,'utf8'),ctx,{filename:f});
+
+          const snapshot=vm.runInContext(`({
+            cards: DATA.cards.map(c=>({id:c.id,ref:c.ref,text:c.text,answers:c.answers,category:c.category})),
+            meta: {...DATA.meta},
+            categories: DATA.categories.map(c=>({...c}))
+          })`,ctx);
+          const {cards,meta,categories}=snapshot;
+          const fail=(m)=>{throw new Error(m)};
+          const eq=(a,b,m)=>{if(a!==b)fail(`${m}: expected ${b}, got ${a}`)};
+
+          eq(cards.length,1386,'active card count');
+          eq(meta.actual_cards,1386,'meta card count');
+          eq(meta.answer_terms,2378,'answer term count');
+          eq(categories.reduce((n,c)=>n+c.actual,0),1386,'category card sum');
+          eq(categories.reduce((n,c)=>n+c.answer_terms,0),2378,'category answer sum');
+
+          const ids=cards.map(c=>c.id);
+          eq(new Set(ids).size,ids.length,'unique IDs');
+          const excluded=[231,243,400,537];
+          for(const id of excluded) if(ids.includes(id)) fail(`excluded heading ID remains: ${id}`);
+          const gaps=[];
+          for(let i=1;i<=1390;i++) if(!ids.includes(i)) gaps.push(i);
+          if(JSON.stringify(gaps)!==JSON.stringify(excluded)) fail(`unexpected ID gaps: ${gaps}`);
+
+          for(const c of cards){
+            if(!Array.isArray(c.answers)||!c.answers.length) fail(`card has no cloze answer: ${c.id}`);
+            if(c.answers.some(a=>!String(a).trim())) fail(`blank cloze answer: ${c.id}`);
+            const opens=(c.text.match(/（/g)||[]).length;
+            const closes=(c.text.match(/）/g)||[]).length;
+            if(opens!==closes) fail(`full-width bracket mismatch: ${c.id} ${c.text}`);
+          }
+
+          const expected=new Map([
+            [112,'構成失行の主な責任病巣（右頭頂葉）'],
+            [242,'プロフィール5は、（むせることがしばしば）で、（全量飲むことが困難）である。'],
+            [293,'K-point刺激の対象には、（嚥下反射惹起遅延）（重度嚥下障害）も含まれる。'],
+            [401,'VEでは、検査食に（青色）や（緑色）などの食用着色料を添加し、（咽頭残留）や（喉頭侵入）などを評価する。'],
+            [738,'レビー小体型認知症では、（認知機能の変動）（幻視）（パーキンソニズム）が特徴である。'],
+            [746,'レビー小体型認知症などで視空間認知障害がある場合は、（できる動作に合わせて食器の位置を調整）する。'],
+            [1042,'ACE阻害薬カプトプリルでは、（サブスタンスP増加）などを介して（嚥下反射）（咳反射）の改善がみられることがある。']
+          ]);
+          for(const [id,text] of expected){
+            const c=cards.find(x=>x.id===id);
+            if(!c) fail(`fixed card missing: ${id}`);
+            eq(c.text,text,`fixed text ${id}`);
+            const parsed=[...text.matchAll(/（([^（）]+)）/g)].map(m=>m[1]);
+            if(JSON.stringify(c.answers)!==JSON.stringify(parsed)) fail(`answer extraction mismatch: ${id}`);
+          }
+
+          console.log(`QA PASS: ${cards.length} active cards, ${meta.answer_terms} cloze terms, stable IDs with 4 intentional gaps.`);
+          NODE
