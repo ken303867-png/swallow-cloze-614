@@ -1,9 +1,13 @@
 const CACHE_PREFIX = 'swallow-cloze-614-new-';
-const CACHE = CACHE_PREFIX + 'v20-compact1384-rev1';
+const CACHE = CACHE_PREFIX + 'v21-compact1378-source-rev1';
 const ASSETS = [
   './','./index.html','./manifest.json','./styles.css',
   './data-sections-01-05.js','./data-sections-06-09.js','./data-sections-10-13.js','./data-sections-14-17.js',
-  './data.js','./data-qa-fixes.js','./data-final-audit.js','./data-progress-migration.js','./data-final-progress-migration.js','./core.js','./data-transfer.js','./results.js','./memory.js'
+  './data.js','./data-qa-fixes.js','./data-final-audit.js',
+  './data-source-revision-updates-01.js','./data-source-revision-updates-02.js','./data-source-revision-updates-03.js','./data-source-revision-updates-04.js','./data-source-revision-updates-05.js','./data-source-revision-updates-06.js','./data-source-revision-updates-07.js',
+  './data-source-revision-additions.js','./data-source-revision-final.js',
+  './data-progress-migration.js','./data-final-progress-migration.js','./data-source-revision-progress-20260826.js',
+  './core.js','./data-transfer.js','./results.js','./memory.js'
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
