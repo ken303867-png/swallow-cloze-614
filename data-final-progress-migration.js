@@ -36,8 +36,8 @@ try{
 (()=>{
 'use strict';
 const KEY='swallow_cloze_614_independent_pwa_v1';
-const TARGET='compact1384-rev1';
-const INVALIDATE=new Set([115,116,123,127,141,144,146,148,153,158,167,168,170,171,185,202,203,214,227,228,229,235,242,253,264].map(String));
+const TARGET='compact1384-rev2';
+const INVALIDATE=new Set([115,116,123,127,130,134,135,139,141,143,144,145,146,147,148,151,152,153,154,155,157,158,161,167,168,170,171,185,192,202,203,208,209,210,211,212,213,214,215,216,217,218,227,228,229,235,242,247,253,256,264].map(String));
 const REMOVED=new Set([119,140,142,149,150,156,159,160,230,263].map(String));
 try{
   const raw=localStorage.getItem(KEY);
@@ -66,7 +66,7 @@ try{
     state.archivedDataSets.push({
       archivedAt:new Date().toISOString(),
       revisionVersion:TARGET,
-      reason:'uploaded-revised-docx-answer-change-or-removal',
+      reason:'uploaded-revised-docx-content-change-or-removal',
       invalidatedIds:[...INVALIDATE].map(Number),
       removedIds:[...REMOVED].map(Number),
       progress:archivedProgress,
