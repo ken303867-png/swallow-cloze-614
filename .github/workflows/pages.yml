@@ -2,16 +2,53 @@ name: Deploy PWA to GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
   pages: write
   id-token: write
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Syntax and dataset QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m json.tool manifest.json >/dev/null
+          for f in data-source-revision-updates-01.js data-source-revision-updates-02.js data-source-revision-updates-03.js data-source-revision-updates-04.js data-source-revision-updates-05.js data-source-revision-updates-06.js data-source-revision-updates-07.js data-source-revision-additions.js data-source-revision-final.js data-source-revision-progress-20260826.js data-final-progress-migration.js core.js memory.js results.js sw.js; do
+            node --check "$f"
+          done
+          cat data-sections-01-05.js data-sections-06-09.js data-sections-10-13.js data-sections-14-17.js data.js data-qa-fixes.js data-final-audit.js data-source-revision-updates-01.js data-source-revision-updates-02.js data-source-revision-updates-03.js data-source-revision-updates-04.js data-source-revision-updates-05.js data-source-revision-updates-06.js data-source-revision-updates-07.js data-source-revision-additions.js data-source-revision-final.js > /tmp/dataset-qa.js
+          cat >> /tmp/dataset-qa.js <<'JS'
+          if(DATA.cards.length!==1378)throw new Error(`card count ${DATA.cards.length}`);
+          if(DATA.meta.answer_terms!==2385)throw new Error(`answer terms ${DATA.meta.answer_terms}`);
+          const sec3=DATA.cards.filter(c=>c.category_symbol==='③');
+          if(sec3.length!==146)throw new Error(`section ③ count ${sec3.length}`);
+          if(new Set(DATA.cards.map(c=>c.id)).size!==DATA.cards.length)throw new Error('duplicate IDs');
+          const removed=[119,140,142,149,150,156,159,160,230,263];
+          if(removed.some(id=>DATA.cards.some(c=>c.id===id)))throw new Error('removed ID remains');
+          for(let id=1391;id<=1398;id++)if(!DATA.cards.some(c=>c.id===id))throw new Error(`new ID ${id} missing`);
+          if(DATA.meta.data_version!=='2026-08-26-compact1378-revision1')throw new Error(`data version ${DATA.meta.data_version}`);
+          console.log(`QA OK: ${DATA.cards.length} cards / ${DATA.meta.answer_terms} terms / section3 ${sec3.length}`);
+          JS
+          node /tmp/dataset-qa.js
+          grep -q '摂食嚥下 正文化穴抜き1378' index.html
+          ! grep -q '1,384カード' index.html
+          grep -q 'v21-compact1378-source-rev1' sw.js
+          for f in data-source-revision-updates-01.js data-source-revision-updates-02.js data-source-revision-updates-03.js data-source-revision-updates-04.js data-source-revision-updates-05.js data-source-revision-updates-06.js data-source-revision-updates-07.js data-source-revision-additions.js data-source-revision-final.js data-source-revision-progress-20260826.js; do
+            grep -q "'./$f'" sw.js
+          done
   deploy:
+    if: github.event_name != 'pull_request'
+    needs: qa
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
