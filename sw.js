@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'swallow-cloze-614-new-';
-const CACHE = CACHE_PREFIX + 'v20-compact1384-rev1';
+const CACHE = CACHE_PREFIX + 'v21-compact1384-rev2';
 const ASSETS = [
   './','./index.html','./manifest.json','./styles.css',
   './data-sections-01-05.js','./data-sections-06-09.js','./data-sections-10-13.js','./data-sections-14-17.js',
